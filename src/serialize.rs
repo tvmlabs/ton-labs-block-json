@@ -253,7 +253,7 @@ pub fn shard_to_string(value: u64) -> String {
 }
 
 fn construct_address(workchain_id: i32, account_id: AccountId) -> Result<MsgAddressInt> {
-    if workchain_id <= 127 && workchain_id >= -128 
+    if workchain_id <= 127 && workchain_id >= -128
         && account_id.remaining_bits() == STD_ACCOUNT_ID_LENGTH
     {
         MsgAddressInt::with_standart(None, workchain_id as i8, account_id)
@@ -299,12 +299,12 @@ fn serialize_slice(
 
 fn serialize_id(map: &mut Map<String, Value>, id_str: & str, id: Option<&UInt256>) {
     if let Some(id) = id {
-        map.insert(id_str.to_string(), id.as_hex_string().into());
+        map.insert(id_str.to_string(), id.to_hex_string().into());
     }
 }
 
 fn serialize_uint256(map: &mut Map<String, Value>, name: & str, value: &UInt256) {
-    map.insert(name.to_string(), value.as_hex_string().into());
+    map.insert(name.to_string(), value.to_hex_string().into());
 }
 
 fn serialize_field(map: &mut Map<String, Value>, id_str: &str, value: impl Into<Value>) {
@@ -432,7 +432,7 @@ fn serialize_action_phase<'a>(map: &mut Map<String, Value>, ph: Option<&'a TrAct
         ph_map.insert("spec_actions".to_string(), ph.spec_actions.into());
         ph_map.insert("skipped_actions".to_string(), ph.skipped_actions.into());
         ph_map.insert("msgs_created".to_string(), ph.msgs_created.into());
-        ph_map.insert("action_list_hash".to_string(), ph.action_list_hash.as_hex_string().into());
+        ph_map.insert("action_list_hash".to_string(), ph.action_list_hash.to_hex_string().into());
         ph_map.insert("tot_msg_size_cells".to_string(), ph.tot_msg_size.cells().into());
         ph_map.insert("tot_msg_size_bits".to_string(), ph.tot_msg_size.bits().into());
         serialize_field(map, "action", ph_map);
@@ -671,8 +671,8 @@ fn serialize_shard_descr(descr: &ShardDescr, mode: SerializationMode) -> Result<
     serialize_field(&mut map, "reg_mc_seqno", descr.reg_mc_seqno);
     serialize_lt(&mut map, "start_lt", &descr.start_lt, mode);
     serialize_lt(&mut map, "end_lt", &descr.end_lt, mode);
-    serialize_field(&mut map, "root_hash", descr.root_hash.as_hex_string());
-    serialize_field(&mut map, "file_hash", descr.file_hash.as_hex_string());
+    serialize_field(&mut map, "root_hash", descr.root_hash.to_hex_string());
+    serialize_field(&mut map, "file_hash", descr.file_hash.to_hex_string());
     serialize_field(&mut map, "before_split", descr.before_split);
     serialize_field(&mut map, "before_merge", descr.before_merge);
     serialize_field(&mut map, "want_split", descr.want_split);
@@ -811,7 +811,7 @@ fn serialize_msg_fwd_prices(map: &mut Map<String, Value>, fp: &MsgForwardPrices,
 fn serialize_fundamental_smc_addresses(addresses: &FundamentalSmcAddresses) -> Result<Value> {
     let mut vector = Vec::<Value>::new();
     addresses.iterate_keys(|k: UInt256| -> Result<bool> {
-        vector.push(k.as_hex_string().into());
+        vector.push(k.to_hex_string().into());
         Ok(true)
     })?;
     Ok(vector.into())
@@ -826,7 +826,7 @@ fn serialize_validators_set(map: &mut Map<String, Value>, set: &ValidatorSet, mo
     let mut vector = Vec::<Value>::new();
     for v in set.list() {
         let mut map = Map::new();
-        serialize_field(&mut map, "public_key", hex::encode(v.public_key.as_slice()));
+        serialize_field(&mut map, "public_key", hex::encode(v.public_key.key_bytes()));
         serialize_u64(&mut map, "weight", &v.weight, mode);
         serialize_id(&mut map, "adnl_addr", v.adnl_addr.as_ref());
         vector.push(map.into());
@@ -866,19 +866,19 @@ fn serialize_known_config_param(number: u32, param: &mut SliceData, mode: Serial
 
     match ConfigParamEnum::construct_from_slice_and_number(param, number)? {
         ConfigParamEnum::ConfigParam0(ref c) => {
-            return Ok(Some(c.config_addr.as_hex_string().into()));
+            return Ok(Some(c.config_addr.to_hex_string().into()));
         },
         ConfigParamEnum::ConfigParam1(ref c) => {
-            return Ok(Some(c.elector_addr.as_hex_string().into()));
+            return Ok(Some(c.elector_addr.to_hex_string().into()));
         },
         ConfigParamEnum::ConfigParam2(ref c) => {
-            return Ok(Some(c.minter_addr.as_hex_string().into()));
+            return Ok(Some(c.minter_addr.to_hex_string().into()));
         },
         ConfigParamEnum::ConfigParam3(ref c) => {
-            return Ok(Some(c.fee_collector_addr.as_hex_string().into()));
+            return Ok(Some(c.fee_collector_addr.to_hex_string().into()));
         },
         ConfigParamEnum::ConfigParam4(ref c) => {
-            return Ok(Some(c.dns_root_addr.as_hex_string().into()));
+            return Ok(Some(c.dns_root_addr.to_hex_string().into()));
         },
         ConfigParamEnum::ConfigParam6(ref c) => {
             serialize_grams(&mut map, "mint_new_price", &c.mint_new_price, mode);
@@ -898,22 +898,22 @@ fn serialize_known_config_param(number: u32, param: &mut SliceData, mode: Serial
             return Ok(Some(serialize_mandatory_params(&c.critical_params)?));
         },
         ConfigParamEnum::ConfigParam11(ref c) => {
-            serialize_field(&mut map, "normal_params", 
+            serialize_field(&mut map, "normal_params",
                 serialize_config_proposal_setup(&c.read_normal_params()?)?);
-            serialize_field(&mut map, "critical_params", 
+            serialize_field(&mut map, "critical_params",
                 serialize_config_proposal_setup(&c.read_critical_params()?)?);
         },
         ConfigParamEnum::ConfigParam12(ref c) => {
-            return Ok(Some(serialize_workchains(&c.workchains)?)); 
+            return Ok(Some(serialize_workchains(&c.workchains)?));
         },
         ConfigParamEnum::ConfigParam13(ref c) => {
             let boc = serialize_toc(&c.cell)?;
             serialize_field(&mut map, "boc", base64::encode(&boc));
         },
         ConfigParamEnum::ConfigParam14(ref c) => {
-            serialize_grams(&mut map, "masterchain_block_fee", 
+            serialize_grams(&mut map, "masterchain_block_fee",
                 &c.block_create_fees.masterchain_block_fee, mode);
-            serialize_grams(&mut map, "basechain_block_fee", 
+            serialize_grams(&mut map, "basechain_block_fee",
                 &c.block_create_fees.basechain_block_fee, mode);
         },
         ConfigParamEnum::ConfigParam15(ref c) => {
@@ -996,16 +996,6 @@ fn serialize_known_config_param(number: u32, param: &mut SliceData, mode: Serial
         },
         ConfigParamEnum::ConfigParam39(ref c) => {
             return Ok(Some(serialize_validator_signed_temp_keys(&c.validator_keys)?));
-        },
-        ConfigParamEnum::ConfigParam40(ref c) => {
-            serialize_field(&mut map, "slashing_period_mc_blocks_count", c.slashing_config.slashing_period_mc_blocks_count);
-            serialize_field(&mut map, "resend_mc_blocks_count", c.slashing_config.resend_mc_blocks_count);
-            serialize_field(&mut map, "min_samples_count", c.slashing_config.min_samples_count);
-            serialize_field(&mut map, "collations_score_weight", c.slashing_config.collations_score_weight);
-            serialize_field(&mut map, "signing_score_weight", c.slashing_config.signing_score_weight);
-            serialize_field(&mut map, "min_slashing_protection_score", c.slashing_config.min_slashing_protection_score);
-            serialize_field(&mut map, "z_param_numerator", c.slashing_config.z_param_numerator);
-            serialize_field(&mut map, "z_param_denominator", c.slashing_config.z_param_denominator);
         },
         _ => {
             return Ok(None)
@@ -1134,12 +1124,12 @@ fn serialize_libraries(map: &mut Map<String, Value>, id_str: &str, libraries: &L
         let value = LibDescr::construct_from(value)?;
         let mut publishers = Vec::new();
         value.publishers().iterate_slices_with_keys(|ref mut key, _| -> Result<bool> {
-            publishers.push(key.as_hex_string());
+            publishers.push(key.to_hex_string());
             Ok(true)
         })?;
 
         libraries_vec.push(serde_json::json!({
-            "hash": key.as_hex_string(),
+            "hash": key.to_hex_string(),
             "publishers": publishers,
             "lib": base64::encode(&serialize_toc(value.lib())?)
         }));
@@ -1167,7 +1157,7 @@ fn serialize_out_msg_queue_info(map: &mut Map<String, Value>, id_str: &str, info
         processed_map.insert("shard".to_string(), shard_to_string(key.get_next_u64()?).into());
         processed_map.insert("mc_seqno".to_string(), key.get_next_u32()?.into());
         serialize_lt(&mut processed_map, "last_msg_lt", &value.last_msg_lt, mode);
-        processed_map.insert("last_msg_hash".to_string(), value.last_msg_hash.as_hex_string().into());
+        processed_map.insert("last_msg_hash".to_string(), value.last_msg_hash.to_hex_string().into());
         proc_info.push(processed_map);
         Ok(true)
     })?;
@@ -1612,7 +1602,7 @@ pub fn db_serialize_transaction_ex<'a>(
         if let Some(value) = msg.get_value() {
             balance_delta.add(&SignedCurrencyCollection::from_cc(value)?);
         }
-        // IHR fee is added to account balance if IHR is not used or to total fees if message 
+        // IHR fee is added to account balance if IHR is not used or to total fees if message
         // delivered through IHR
         if let Some((ihr_fee, _)) = get_msg_fees(&msg) {
             balance_delta.grams += ihr_fee.value();
@@ -1626,7 +1616,7 @@ pub fn db_serialize_transaction_ex<'a>(
     let mut out_ids = vec![];
     set.transaction.out_msgs.iterate_slices(|slice| {
         if let Some(cell) = slice.reference_opt(0) {
-            out_ids.push(cell.repr_hash().as_hex_string());
+            out_ids.push(cell.repr_hash().to_hex_string());
 
             let msg = Message::construct_from(&mut cell.into())?;
             if let Some(value) = msg.get_value() {
@@ -1651,7 +1641,7 @@ pub fn db_serialize_transaction_ex<'a>(
         serialize_field(&mut map, "account_addr", address.to_string());
         serialize_field(&mut map, "workchain_id", address.get_workchain_id());
     } else {
-        serialize_field(&mut map, "account_id", set.transaction.account_addr.as_hex_string());
+        serialize_field(&mut map, "account_id", set.transaction.account_addr.to_hex_string());
     }
     serialize_cc(&mut map, "total_fees", &set.transaction.total_fees, mode)?;
     balance_delta.sub(&SignedCurrencyCollection::from_cc(&set.transaction.total_fees)?);
@@ -1709,7 +1699,6 @@ pub fn db_serialize_account_ex(id_str: &'static str, set: &AccountSerializationS
         serialize_field(&mut map, "workchain_id", addr.get_workchain_id());
     }
     serialize_field(&mut map, "boc", base64::encode(&set.boc));
-    serialize_id(&mut map, "init_code_hash", set.account.init_code_hash());
     if let Some(storage_stat) = set.account.storage_info() {
         serialize_field(&mut map, "last_paid", storage_stat.last_paid());
         serialize_u64(&mut map, "bits", &storage_stat.used().bits(), mode);
@@ -1811,7 +1800,7 @@ pub fn db_serialize_message_ex(id_str: &'static str, set: &MessageSerializationS
     serialize_field(&mut map, "json_version", VERSION);
     serialize_id(&mut map, id_str, Some(&set.id));
     // isn't needed there - because message should be fully immutable from source block to destination one
-    //serialize_id(&mut map, "block_id", set.block_id.as_ref()); 
+    //serialize_id(&mut map, "block_id", set.block_id.as_ref());
     serialize_id(&mut map, "transaction_id", set.transaction_id.as_ref());
     if let Some(proof) = &set.proof {
         serialize_field(&mut map, "proof", base64::encode(&proof));
@@ -1960,7 +1949,7 @@ pub fn db_serialize_block_proof_ex(
            }
        )?;
        serialize_field(&mut map, "signatures", signs);
-    } 
+    }
     Ok(map)
 }
 

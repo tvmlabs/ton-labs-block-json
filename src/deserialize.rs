@@ -28,7 +28,7 @@ use ton_block::{
     ConfigParam7, ConfigParam8, ConfigParam9,
     ConfigParam10, ConfigParam11, ConfigParam12, ConfigParam13, ConfigParam14,
     ConfigParam15, ConfigParam16, ConfigParam17, ConfigParam18,
-    ConfigParam29, ConfigParam31, ConfigParam34, ConfigParam40,
+    ConfigParam29, ConfigParam31, ConfigParam34,
     ConfigParam18Map, ConfigParams,
     ConfigProposalSetup,
     ConsensusConfig,
@@ -44,7 +44,6 @@ use ton_block::{
     MsgForwardPrices,
     ParamLimits,
     ShardAccount, ShardIdent, ShardStateUnsplit,
-    SlashingConfig,
     StoragePrices,
     ValidatorDescr, ValidatorSet,
     Workchains, WorkchainDescr, WorkchainFormat, WorkchainFormat0, WorkchainFormat1,
@@ -422,7 +421,7 @@ pub fn parse_config(config: &Map<String, Value>) -> Result<ConfigParams> {
 
     let p23 = parse_block_limits(&config.get_obj("p23")?)?;
     set_config(&config, &mut config_params, ConfigParamEnum::ConfigParam23(p23))?;
-    
+
     let p24 = parse_msg_forward_prices(&config.get_obj("p24")?)?;
     set_config(&config, &mut config_params, ConfigParamEnum::ConfigParam24(p24))?;
 
@@ -479,19 +478,6 @@ pub fn parse_config(config: &Map<String, Value>) -> Result<ConfigParams> {
     )?;
     set_config(&config, &mut config_params, ConfigParamEnum::ConfigParam34(ConfigParam34 {cur_validators}))?;
 
-    let mut slashing_config = SlashingConfig::default();
-    if let Ok(p40) = config.get_obj("p40") {
-        p40.get_u32("slashing_period_mc_blocks_count", &mut slashing_config.slashing_period_mc_blocks_count);
-        p40.get_u32("resend_mc_blocks_count", &mut slashing_config.resend_mc_blocks_count);
-        p40.get_u32("min_samples_count", &mut slashing_config.min_samples_count);
-        p40.get_u32("collations_score_weight", &mut slashing_config.collations_score_weight);
-        p40.get_u32("signing_score_weight", &mut slashing_config.signing_score_weight);
-        p40.get_u32("min_slashing_protection_score", &mut slashing_config.min_slashing_protection_score);
-        p40.get_u32("z_param_numerator", &mut slashing_config.z_param_numerator);
-        p40.get_u32("z_param_denominator", &mut slashing_config.z_param_denominator);
-    }
-    set_config(&config, &mut config_params, ConfigParamEnum::ConfigParam40(ConfigParam40 {slashing_config}))?;
-
     Ok(config_params)
 }
 
@@ -528,7 +514,7 @@ pub fn parse_state(map: &Map<String, Value>) -> Result<ShardStateUnsplit> {
         Account::construct_from_bytes(&account.get_base64("boc")?)
             .and_then(|acc| ShardAccount::with_params(&acc, UInt256::default(), 0))
             .and_then(|acc| state.insert_account(&account_id, &acc))
-            
+
     })?;
 
     let libraries = map_path.get_vec("libraries")?;
