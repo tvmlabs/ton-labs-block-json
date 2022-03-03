@@ -1,33 +1,16 @@
-#
-# Copyright 2018-2021 TON DEV SOLUTIONS LTD.
-#
-# Licensed under the SOFTWARE EVALUATION License (the "License"); you may not use
-# this file except in compliance with the License.  You may obtain a copy of the
-# License at:
-#
-# https://www.ton.dev/licenses
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific TON DEV software governing permissions and limitations
-# under the License.
-#
-
 [package]
-edition = "2018"
+edition = "2021"
 name = "ton_block_json"
-version = "0.6.22"
+version = "0.7.3"
 
 [dependencies]
+anyhow = "1.0.55"
+base64 = "0.13.0"
+hex = "0.4.3"
+num = "0.3.1"
+num-traits = "0.2.14"
+serde = { version = "1.0.136", features = ["derive"] }
+serde_json = { version = "1.0.79", features = ["preserve_order"] }
+
 ton_block = { git = "https://github.com/broxus/ton-labs-block" }
 ton_types = { git = "https://github.com/broxus/ton-labs-types" }
-
-anyhow = "1.0"
-base64 = "0.13.0"
-hex = "0.4"
-num = "0.3"
-num-traits = "0.2"
-rand = "0.8"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = {version = "1.0", features = ["preserve_order"]}
