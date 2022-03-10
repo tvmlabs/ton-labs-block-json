@@ -402,7 +402,7 @@ impl StateParser {
         self.parse_p12(config);
 
         if let Ok(p13) = config.get_obj("p13") {
-            let cell = deserialize_tree_of_cells(&mut std::io::Cursor::new(p13.get_base64("boc")?))?;
+            let cell = deserialize_tree_of_cells(&mut p13.get_base64("boc")?.as_slice())?;
             self.set_config(config, ConfigParamEnum::ConfigParam13(ConfigParam13 {cell}));
         }
 
@@ -625,7 +625,7 @@ impl StateParser {
                 let library = PathMap::cont(&map_path, "libraries", library)?;
                 let id = library.get_uint256("hash")?;
                 let lib = library.get_base64("lib")?;
-                let lib = deserialize_tree_of_cells(&mut std::io::Cursor::new(lib))?;
+                let lib = deserialize_tree_of_cells(&mut lib.as_slice())?;
                 let mut lib = LibDescr::new(lib);
                 let publishers = library.get_vec("publishers")?;
                 publishers.iter().try_for_each::<_, Result<()>>(|publisher| {
