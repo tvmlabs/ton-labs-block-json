@@ -14,3 +14,6 @@ serde_json = { version = "1.0.79", features = ["preserve_order"] }
 
 ton_block = { git = "https://github.com/broxus/ton-labs-block" }
 ton_types = { git = "https://github.com/broxus/ton-labs-types" }
+
+[features]
+venom = ["ton_block/venom"]

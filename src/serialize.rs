@@ -814,6 +814,15 @@ fn serialize_out_msg(msg: &OutMsg, mode: SerializationMode) -> Result<Value> {
     Ok(map.into())
 }
 
+#[cfg(feature = "venom")]
+fn serialize_collator_range(sc: &CollatorRange) -> Result<Value> {
+    let mut map = Map::new();
+    serialize_field(&mut map, "collator", sc.collator);
+    serialize_field(&mut map, "start", sc.start);
+    serialize_field(&mut map, "finish", sc.finish);
+    Ok(map.into())
+}
+
 fn serialize_shard_descr(descr: &ShardDescr, mode: SerializationMode) -> Result<Value> {
     let mut map = Map::new();
     serialize_field(&mut map, "seq_no", descr.seq_no);
@@ -856,6 +865,21 @@ fn serialize_shard_descr(descr: &ShardDescr, mode: SerializationMode) -> Result<
         }
         FutureSplitMerge::None => (),
     };
+    #[cfg(feature = "venom")]
+    if let Some(collators) = &descr.collators {
+        let mut collators_map = Map::new();
+        serialize_field(&mut collators_map, "prev", serialize_collator_range(&collators.prev)?);
+        if let Some(prev2) = &collators.prev2 {
+            serialize_field(&mut collators_map, "prev2", serialize_collator_range(prev2)?);
+        }
+        serialize_field(&mut collators_map, "current", serialize_collator_range(&collators.current)?);
+        serialize_field(&mut collators_map, "next", serialize_collator_range(&collators.next)?);
+        if let Some(next2) = &collators.next2 {
+            serialize_field(&mut collators_map, "next2", serialize_collator_range(next2)?);
+        }
+        serialize_field(&mut collators_map, "updated_at", collators.updated_at);
+        map.insert("collators".to_string(), collators_map.into());
+    }
     Ok(map.into())
 }
 
@@ -1507,6 +1531,18 @@ fn serialize_libraries(
     Ok(())
 }
 
+#[cfg(feature = "venom")]
+fn serialise_shard_block_ref(block_id: &BlockIdExt, end_lt: u64, mode: SerializationMode) -> Result<Value> {
+    let mut map = Map::new();
+    map.insert("workchain".to_string(), block_id.shard().workchain_id().into());
+    map.insert("shard".to_string(), block_id.shard().shard_prefix_with_tag().into());
+    map.insert("seq_no".to_string(), block_id.seq_no().into());
+    serialize_id(&mut map, "root_hash", Some(block_id.root_hash()));
+    serialize_id(&mut map, "file_hash", Some(block_id.file_hash()));
+    serialize_lt(&mut map, "end_lt", &end_lt, mode);
+    Ok(map.into())
+}
+
 fn serialize_out_msg_queue_info(
     map: &mut Map<String, Value>,
     id_str: &str,
@@ -1800,6 +1836,8 @@ pub fn db_serialize_block_ex<'a>(
         "gen_utime".to_string(),
         block_info.gen_utime().as_u32().into(),
     );
+    #[cfg(feature = "venom")]
+    map.insert("gen_utime_ms".to_string(), block_info.gen_utime_ms().into());
     serialize_lt(&mut map, "start_lt", &block_info.start_lt(), mode);
     serialize_lt(&mut map, "end_lt", &block_info.end_lt(), mode);
     map.insert(
@@ -1916,6 +1954,17 @@ pub fn db_serialize_block_ex<'a>(
         msgs.push(serialize_out_msg(msg, mode)?);
         Ok(true)
     })?;
+
+    #[cfg(feature = "venom")]
+    {
+        let mut rsb = vec![];
+        extra.ref_shard_blocks().iterate_shard_block_refs(|block_id, end_lt| {
+            rsb.push(serialise_shard_block_ref(&block_id, end_lt, mode)?);
+            Ok(true)
+        })?;
+        map.insert("ref_shard_blocks".to_string(), rsb.into());
+    }
+
     map.insert("out_msg_descr".to_string(), msgs.into());
     let mut total_tr_count = 0;
     let mut account_blocks = Vec::new();
@@ -2596,6 +2645,8 @@ pub fn db_serialize_block_proof_ex(
         "gen_utime".to_string(),
         block_info.gen_utime().as_u32().into(),
     );
+    #[cfg(feature = "venom")]
+    map.insert("gen_utime_ms".to_string(), block_info.gen_utime_ms().into());
     map.insert("seq_no".to_string(), block_info.seq_no().into());
     map.insert(
         "workchain_id".to_string(),
@@ -2676,6 +2727,8 @@ pub fn db_serialize_shard_state_ex(
     serialize_field(&mut map, "seq_no", set.state.seq_no());
     serialize_field(&mut map, "vert_seq_no", set.state.vert_seq_no());
     serialize_field(&mut map, "gen_utime", set.state.gen_time());
+    #[cfg(feature = "venom")]
+    serialize_field(&mut map, "gen_utime_ms", set.state.gen_time_ms());
     serialize_lt(&mut map, "gen_lt", &set.state.gen_lt(), mode);
     serialize_field(&mut map, "min_ref_mc_seqno", set.state.min_ref_mc_seqno());
     serialize_field(&mut map, "before_split", set.state.before_split());
