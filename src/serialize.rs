@@ -1535,7 +1535,7 @@ fn serialize_libraries(
 fn serialise_shard_block_ref(block_id: &BlockIdExt, end_lt: u64, mode: SerializationMode) -> Result<Value> {
     let mut map = Map::new();
     map.insert("workchain".to_string(), block_id.shard().workchain_id().into());
-    map.insert("shard".to_string(), block_id.shard().shard_prefix_with_tag().into());
+    map.insert("shard".to_string(), block_id.shard().shard_prefix_as_str_with_tag().into());
     map.insert("seq_no".to_string(), block_id.seq_no().into());
     serialize_id(&mut map, "root_hash", Some(block_id.root_hash()));
     serialize_id(&mut map, "file_hash", Some(block_id.file_hash()));
